@@ -1,8 +1,10 @@
 const Task = require("../models/task.model");
 const paginationHelper = require("../../../helper/pagination");
+const searchHelper = require("../../../helper/search");
 
 // [GET] /api/v1/task
 module.exports.index = async (req, res) => {
+    const query = req.query;
     const filter = {
         deleted: false
     };
@@ -20,9 +22,17 @@ module.exports.index = async (req, res) => {
     }
     // end filter by status
 
+    //search
+    const search = searchHelper.search(query);
+    const regex = search.regex;
+    if (regex) {
+        filter.title = regex;
+    }
+    //end search
+
     // sort
-    const sortKey = req.query.sortKey;
-    const sortValue = req.query.sortValue;
+    const sortKey = query.sortKey;
+    const sortValue = query.sortValue;
     if (sortKey && sortValue) {
         const listKey = ["title", "timeStart", "timeFinish"];
         const listValue = ["asc", "desc"];
@@ -38,7 +48,7 @@ module.exports.index = async (req, res) => {
     // pagination
     const limit = 3;
     const total = await Task.countDocuments(filter);
-    const pagination = paginationHelper.pagination(req.query, limit, total);
+    const pagination = paginationHelper.pagination(query, limit, total);
     // end pagination
 
     const tasks = await Task.find(filter).sort(sortObject).skip(pagination.skip).limit(pagination.limit);
