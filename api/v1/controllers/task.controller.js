@@ -2,6 +2,8 @@ const Task = require("../models/task.model");
 const paginationHelper = require("../../../helper/pagination");
 const searchHelper = require("../../../helper/search");
 
+const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
+
 // [GET] /api/v1/task
 module.exports.index = async (req, res) => {
     const query = req.query;
@@ -13,7 +15,6 @@ module.exports.index = async (req, res) => {
     // filter by status
     const status = req.query.status;
     if (status) {
-        const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
         if (listStatus.includes(status)) {
             filter.status = status;
         } else {
@@ -72,5 +73,30 @@ module.exports.detail = async (req, res) => {
         }
     } catch (error) {
         return res.sendStatus(500);
+    }
+}
+
+// [PATCH] /api/v1/task/change-status/:id
+module.exports.changeStatus = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const status = req.body.status;
+
+        if (listStatus.includes(status)) {
+            const update = await Task.updateOne({
+                _id: id,
+                status: status
+            });
+
+            if (update) {
+                return res.sendStatus(200);
+            } else {
+                return res.sendStatus(500);
+            }
+        } else {
+            return res.sendStatus(400);
+        }
+    } catch (error) {
+        res.sendStatus(500);
     }
 }
