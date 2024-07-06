@@ -4,20 +4,37 @@ const Task = require("../models/task.model");
 module.exports.index = async (req, res) => {
     const filter = {
         deleted: false
-    }
+    };
+    const sortObject = {};
 
     // filter by status
     const status = req.query.status;
-    const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
-    if (listStatus.includes(status)) {
-        filter.status = status;
-    } else {
-        return res.sendStatus(400);
+    if (status) {
+        const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
+        if (listStatus.includes(status)) {
+            filter.status = status;
+        } else {
+            return res.sendStatus(400);
+        }
     }
     // end filter by status
 
+    // sort
+    const sortKey = req.query.sortKey;
+    const sortValue = req.query.sortValue;
+    if (sortKey && sortValue) {
+        const listKey = ["title", "timeStart", "timeFinish"];
+        const listValue = ["asc", "desc"];
 
-    const tasks = await Task.find(filter);
+        if (listKey.includes(sortKey) && listValue.includes(sortValue)) {
+            sortObject[sortKey] = sortValue;
+        } else {
+            return res.sendStatus(400);
+        }
+    }
+    // sort
+
+    const tasks = await Task.find(filter).sort(sortObject);
 
     return res.status(200).json(tasks);
 }
