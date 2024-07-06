@@ -128,6 +128,28 @@ module.exports.changeMulti = async (req, res) => {
                 }
             // break;
 
+            case "delete":
+                if (value !== "true") {
+                    return res.sendStatus(400);
+                }
+
+                const del = await Task.updateMany(
+                    {
+                        _id: { $in: ids }
+                    },
+                    {
+                        deleted: true,
+                        deletedAt: Date.now()
+                    }
+                );
+
+                if (del) {
+                    return res.sendStatus(200);
+                } else {
+                    return res.sendStatus(500);
+                }
+            // break;
+
             default:
                 return res.sendStatus(400);
         }
@@ -167,7 +189,6 @@ module.exports.update = async (req, res) => {
         const id = req.params.id;
         req.body.timeStart = new Date(req.body.timeStart);
         req.body.timeFinish = new Date(req.body.timeFinish);
-        console.log(id, req.body);
 
         const update = await Task.updateOne(
             {
@@ -182,6 +203,30 @@ module.exports.update = async (req, res) => {
         } else {
             return res.sendStatus(500);
         }
+    } catch (error) {
+        return res.sendStatus(500);
+    }
+}
+
+// [DELETE] /api/v1/task/delete/:id
+module.exports.delete = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const del = await Task.updateOne(
+            {
+                _id: id
+            },
+            {
+                deleted: true,
+                deletedAt: Date.now()
+            }
+        );
+        if (del) {
+            res.sendStatus(200);
+        } else {
+            res.sendStatus(500);
+        }
+
     } catch (error) {
         return res.sendStatus(500);
     }

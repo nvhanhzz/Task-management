@@ -14,6 +14,8 @@ router.post("/create", validate.create, controller.create);
 
 router.patch("/update/:id", validate.create, controller.update);
 
+router.delete("/delete/:id", controller.delete);
+
 router.get("/", controller.index);
 
 module.exports = router;
