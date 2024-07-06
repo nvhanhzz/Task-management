@@ -82,20 +82,20 @@ module.exports.changeStatus = async (req, res) => {
         const id = req.params.id;
         const status = req.body.status;
 
-        if (listStatus.includes(status)) {
-            const update = await Task.updateOne({
-                _id: id,
-                status: status
-            });
-
-            if (update) {
-                return res.sendStatus(200);
-            } else {
-                return res.sendStatus(500);
-            }
-        } else {
+        if (!listStatus.includes(status)) {
             return res.sendStatus(400);
         }
+
+        const update = await Task.updateOne({
+            _id: id,
+            status: status
+        });
+        if (update) {
+            return res.sendStatus(200);
+        } else {
+            return res.sendStatus(500);
+        }
+
     } catch (error) {
         res.sendStatus(500);
     }
@@ -108,23 +108,23 @@ module.exports.changeMulti = async (req, res) => {
 
         switch (key) {
             case "status":
-                if (listStatus.includes(value)) {
-                    const update = await Task.updateMany(
-                        {
-                            _id: { $in: ids }
-                        },
-                        {
-                            status: value
-                        }
-                    );
-
-                    if (update) {
-                        return res.sendStatus(200);
-                    } else {
-                        return res.sendStatus(500);
-                    }
-                } else {
+                if (!listStatus.includes(value)) {
                     return res.sendStatus(400);
+                }
+
+                const update = await Task.updateMany(
+                    {
+                        _id: { $in: ids }
+                    },
+                    {
+                        status: value
+                    }
+                );
+
+                if (update) {
+                    return res.sendStatus(200);
+                } else {
+                    return res.sendStatus(500);
                 }
             // break;
 
@@ -133,5 +133,27 @@ module.exports.changeMulti = async (req, res) => {
         }
     } catch (error) {
         res.sendStatus(500);
+    }
+}
+
+// [POST] /api/v1/task/create
+module.exports.create = async (req, res) => {
+    if (listStatus.includes(req.body.status)) {
+        return res.sendStatus(400);
+    }
+    try {
+        req.body.timeStart = new Date(req.body.timeStart);
+        req.body.timeFinish = new Date(req.body.timeFinish);
+
+        const task = new Task(req.body);
+        const create = await task.save();
+
+        if (create) {
+            return res.sendStatus(200);
+        } else {
+            return res.sendStatus(500);
+        }
+    } catch (error) {
+        return res.sendStatus(500);
     }
 }
