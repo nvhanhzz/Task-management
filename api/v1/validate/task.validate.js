@@ -1,4 +1,4 @@
-module.exports.create = (req, res, next) => {
+module.exports.create = (req, res, next) => { // use for create and update
     if (!req.body.title) {
         return res.status(400).json({ "message": "Fill out title field" });
     } else if (!req.body.timeStart) {

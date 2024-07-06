@@ -157,3 +157,32 @@ module.exports.create = async (req, res) => {
         return res.sendStatus(500);
     }
 }
+
+// [PATCH] /api/v1/task/update/:id
+module.exports.update = async (req, res) => {
+    if (listStatus.includes(req.body.status)) {
+        return res.sendStatus(400);
+    }
+    try {
+        const id = req.params.id;
+        req.body.timeStart = new Date(req.body.timeStart);
+        req.body.timeFinish = new Date(req.body.timeFinish);
+        console.log(id, req.body);
+
+        const update = await Task.updateOne(
+            {
+                _id: id,
+                deleted: false
+            },
+            req.body
+        );
+
+        if (update) {
+            return res.sendStatus(200);
+        } else {
+            return res.sendStatus(500);
+        }
+    } catch (error) {
+        return res.sendStatus(500);
+    }
+}
