@@ -100,3 +100,38 @@ module.exports.changeStatus = async (req, res) => {
         res.sendStatus(500);
     }
 }
+
+// [PATCH] /api/v1/task/change-multi
+module.exports.changeMulti = async (req, res) => {
+    try {
+        const { ids, key, value } = req.body;
+
+        switch (key) {
+            case "status":
+                if (listStatus.includes(value)) {
+                    const update = await Task.updateMany(
+                        {
+                            _id: { $in: ids }
+                        },
+                        {
+                            status: value
+                        }
+                    );
+
+                    if (update) {
+                        return res.sendStatus(200);
+                    } else {
+                        return res.sendStatus(500);
+                    }
+                } else {
+                    return res.sendStatus(400);
+                }
+            // break;
+
+            default:
+                return res.sendStatus(400);
+        }
+    } catch (error) {
+        res.sendStatus(500);
+    }
+}
