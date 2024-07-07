@@ -1,11 +1,12 @@
 module.exports.create = (req, res, next) => { // use for create and update
     if (!req.body.title) {
-        return res.status(400).json({ "message": "Fill out title field" });
-    } else if (!req.body.timeStart) {
-        return res.status(400).json({ "message": "Fill out time start field" });
-    } else if (!req.body.timeFinish) {
-        return res.status(400).json({ "message": "Fill out time finish field" });
-    } else {
-        return next();
+        return res.status(400).json({ "message": "Please provide a title." });
     }
+    if (!req.body.timeStart) {
+        return res.status(400).json({ "message": "Please provide a start time." });
+    }
+    if (!req.body.timeFinish) {
+        return res.status(400).json({ "message": "Please provide a finish time." });
+    }
+    return next();
 }
