@@ -18,18 +18,18 @@ module.exports.index = async (req, res) => {
         if (listStatus.includes(status)) {
             filter.status = status;
         } else {
-            return res.sendStatus(400);
+            return res.status(400).json({ message: "Invalid status value" });
         }
     }
     // end filter by status
 
-    //search
+    // search
     const search = searchHelper.search(query);
     const regex = search.regex;
     if (regex) {
         filter.title = regex;
     }
-    //end search
+    // end search
 
     // sort
     const sortKey = query.sortKey;
@@ -41,10 +41,10 @@ module.exports.index = async (req, res) => {
         if (listKey.includes(sortKey) && listValue.includes(sortValue)) {
             sortObject[sortKey] = sortValue;
         } else {
-            return res.sendStatus(400);
+            return res.status(400).json({ message: "Invalid sort key or sort value" });
         }
     }
-    // sort
+    // end sort
 
     // pagination
     const limit = 3;
@@ -54,7 +54,17 @@ module.exports.index = async (req, res) => {
 
     const tasks = await Task.find(filter).sort(sortObject).skip(pagination.skip).limit(pagination.limit);
 
-    return res.status(200).json(tasks);
+    return res.status(200).json({
+        message: "Tasks retrieved successfully",
+        tasks: tasks,
+        pagination: {
+            total: total,
+            limit: pagination.limit,
+            skip: pagination.skip,
+            page: pagination.page,
+            totalPages: pagination.totalPages
+        }
+    });
 }
 
 // [GET] /api/v1/task/detail/:id
@@ -67,12 +77,15 @@ module.exports.detail = async (req, res) => {
         });
 
         if (task) {
-            return res.status(200).json(task);
+            return res.status(200).json({
+                message: "Task retrieved successfully",
+                task: task
+            });
         } else {
-            return res.sendStatus(404);
+            return res.status(404).json({ message: "Task not found" });
         }
     } catch (error) {
-        return res.sendStatus(500);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 
@@ -83,21 +96,18 @@ module.exports.changeStatus = async (req, res) => {
         const status = req.body.status;
 
         if (!listStatus.includes(status)) {
-            return res.sendStatus(400);
+            return res.status(400).json({ message: "Invalid status value" });
         }
 
-        const update = await Task.updateOne({
-            _id: id,
-            status: status
-        });
-        if (update) {
-            return res.sendStatus(200);
+        const update = await Task.updateOne({ _id: id }, { status: status });
+
+        if (update.modifiedCount === 0) {
+            return res.status(404).json({ message: "Task not found or status not modified" });
         } else {
-            return res.sendStatus(500);
+            return res.status(200).json({ message: "Status updated successfully" });
         }
-
     } catch (error) {
-        res.sendStatus(500);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 
@@ -109,7 +119,7 @@ module.exports.changeMulti = async (req, res) => {
         switch (key) {
             case "status":
                 if (!listStatus.includes(value)) {
-                    return res.sendStatus(400);
+                    return res.status(400).json({ message: "Invalid status value" });
                 }
 
                 const update = await Task.updateMany(
@@ -121,21 +131,21 @@ module.exports.changeMulti = async (req, res) => {
                     }
                 );
 
-                if (update) {
-                    return res.sendStatus(200);
+                if (update.modifiedCount > 0) {
+                    return res.status(200).json({ message: "Status updated successfully" });
                 } else {
-                    return res.sendStatus(500);
+                    return res.status(404).json({ message: "Tasks not found or status not modified" });
                 }
-            // break;
 
             case "delete":
                 if (value !== "true") {
-                    return res.sendStatus(400);
+                    return res.status(400).json({ message: "Invalid delete value" });
                 }
 
                 const del = await Task.updateMany(
                     {
-                        _id: { $in: ids }
+                        _id: { $in: ids },
+                        deleted: false
                     },
                     {
                         deleted: true,
@@ -143,27 +153,27 @@ module.exports.changeMulti = async (req, res) => {
                     }
                 );
 
-                if (del) {
-                    return res.sendStatus(200);
+                if (del.modifiedCount > 0) {
+                    return res.status(200).json({ message: "Tasks deleted successfully" });
                 } else {
-                    return res.sendStatus(500);
+                    return res.status(404).json({ message: "Tasks not found or already deleted" });
                 }
-            // break;
 
             default:
-                return res.sendStatus(400);
+                return res.status(400).json({ message: "Invalid key" });
         }
     } catch (error) {
-        res.sendStatus(500);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 
 // [POST] /api/v1/task/create
 module.exports.create = async (req, res) => {
-    if (listStatus.includes(req.body.status)) {
-        return res.sendStatus(400);
-    }
     try {
+        if (!listStatus.includes(req.body.status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
         req.body.timeStart = new Date(req.body.timeStart);
         req.body.timeFinish = new Date(req.body.timeFinish);
 
@@ -171,22 +181,24 @@ module.exports.create = async (req, res) => {
         const create = await task.save();
 
         if (create) {
-            return res.sendStatus(200);
+            return res.status(200).json({ message: "Task created successfully" });
         } else {
-            return res.sendStatus(500);
+            return res.status(500).json({ message: "Failed to create task" });
         }
     } catch (error) {
-        return res.sendStatus(500);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 
 // [PATCH] /api/v1/task/update/:id
 module.exports.update = async (req, res) => {
-    if (listStatus.includes(req.body.status)) {
-        return res.sendStatus(400);
-    }
     try {
         const id = req.params.id;
+
+        if (!listStatus.includes(req.body.status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
         req.body.timeStart = new Date(req.body.timeStart);
         req.body.timeFinish = new Date(req.body.timeFinish);
 
@@ -198,13 +210,13 @@ module.exports.update = async (req, res) => {
             req.body
         );
 
-        if (update) {
-            return res.sendStatus(200);
+        if (update.modifiedCount > 0) {
+            return res.status(200).json({ message: "Task updated successfully" });
         } else {
-            return res.sendStatus(500);
+            return res.status(404).json({ message: "Task not found or status not modified" });
         }
     } catch (error) {
-        return res.sendStatus(500);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
 
@@ -212,22 +224,25 @@ module.exports.update = async (req, res) => {
 module.exports.delete = async (req, res) => {
     try {
         const id = req.params.id;
-        const del = await Task.updateOne(
+
+        const update = await Task.updateOne(
             {
-                _id: id
+                _id: id,
+                deleted: false
             },
             {
                 deleted: true,
                 deletedAt: Date.now()
             }
         );
-        if (del) {
-            res.sendStatus(200);
+
+        if (update.modifiedCount > 0) {
+            return res.status(200).json({ message: "Task marked as deleted" });
         } else {
-            res.sendStatus(500);
+            return res.status(404).json({ message: "Task not found or already deleted" });
         }
 
     } catch (error) {
-        return res.sendStatus(500);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
