@@ -18,4 +18,6 @@ router.post("/password/verify-otp", validate.verifyOtp, authMiddleware.checkToke
 
 router.post("/password/reset", validate.resetPassword, authMiddleware.checkToken({ tokenName: 'reset-password-token', type: 'userResetPassword' }), controller.resetPassword);
 
+router.get("/information", authMiddleware.checkToken({ tokenName: 'token', type: 'currentUser' }), controller.information);
+
 module.exports = router;

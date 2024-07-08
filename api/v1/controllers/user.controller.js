@@ -172,3 +172,17 @@ module.exports.resetPassword = async (req, res) => {
     res.clearCookie("reset-password-token");
     return res.status(200).json({ message: "Reset password successful." });
 }
+
+// [GET] /api/v1/user/information
+module.exports.information = async (req, res) => {
+    const currentUser = res.locals.currentUser;
+
+    return res.status(200).json({
+        message: "Information retrieved successfully",
+        information: {
+            _id: currentUser._id,
+            fullName: currentUser.fullName,
+            email: currentUser.email
+        }
+    });
+}
