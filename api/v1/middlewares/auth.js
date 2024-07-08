@@ -39,7 +39,7 @@ module.exports.checkToken = (options = {}) => {
             }
 
             if (type) {
-                res.locals[type] = user;
+                req[type] = user;
             }
 
             return next();
@@ -51,14 +51,14 @@ module.exports.checkToken = (options = {}) => {
 };
 
 module.exports.isLoggedIn = (req, res, next) => {
-    if (!res.locals.currentUser) {
+    if (!req.currentUser) {
         return res.status(403).json({ message: 'You do not have permission to access this resource.' });
     }
     return next();
 }
 
 module.exports.isLoggedOut = (req, res, next) => {
-    if (res.locals.currentUser) {
+    if (req.currentUser) {
         return res.status(403).json({ message: 'You do not have permission to access this resource.' });
     }
     return next();

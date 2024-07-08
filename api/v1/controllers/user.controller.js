@@ -103,7 +103,7 @@ module.exports.forgotPassword = async (req, res) => {
 
 // [POST] /api/v1/user/password/verify-otp
 module.exports.verifyOtp = async (req, res) => {
-    const userVerifyOtp = res.locals.userVerifyOtp;
+    const userVerifyOtp = req.userVerifyOtp;
     if (!userVerifyOtp) {
         return res.status(403).json({ message: 'You do not have permission to access this resource.' });
     }
@@ -150,7 +150,7 @@ module.exports.verifyOtp = async (req, res) => {
 
 // [POST] /api/v1/user/password/reset
 module.exports.resetPassword = async (req, res) => {
-    const userResetPassword = res.locals.userResetPassword;
+    const userResetPassword = req.userResetPassword;
     if (!userResetPassword) {
         return res.status(403).json({ message: 'You do not have permission to access this resource.' });
     }
@@ -175,7 +175,7 @@ module.exports.resetPassword = async (req, res) => {
 
 // [GET] /api/v1/user/information
 module.exports.information = async (req, res) => {
-    const currentUser = res.locals.currentUser;
+    const currentUser = req.currentUser;
 
     return res.status(200).json({
         message: "Information retrieved successfully",

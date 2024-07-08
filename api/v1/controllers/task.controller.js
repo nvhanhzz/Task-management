@@ -1,6 +1,7 @@
 const Task = require("../models/task.model");
 const paginationHelper = require("../../../helper/pagination");
 const searchHelper = require("../../../helper/search");
+const getUserInformationHelper = require("../../../helper/getUserInformation");
 
 const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
 
@@ -8,7 +9,11 @@ const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
 module.exports.index = async (req, res) => {
     const query = req.query;
     const filter = {
-        deleted: false
+        deleted: false,
+        $or: [
+            { createdBy: req.currentUser._id },
+            { participants: req.currentUser._id }
+        ]
     };
     const sortObject = {};
 
@@ -53,6 +58,9 @@ module.exports.index = async (req, res) => {
     // end pagination
 
     const tasks = await Task.find(filter).sort(sortObject).skip(pagination.skip).limit(pagination.limit);
+    if (tasks) {
+        await Promise.all(tasks.map(task => getUserInformationHelper.getUserInformation(task)));
+    }
 
     return res.status(200).json({
         message: "Tasks retrieved successfully",
@@ -73,8 +81,15 @@ module.exports.detail = async (req, res) => {
         const taskId = req.params.id;
         const task = await Task.findOne({
             _id: taskId,
-            deleted: false
+            deleted: false,
+            $or: [
+                { createdBy: req.currentUser._id },
+                { participants: req.currentUser._id }
+            ]
         });
+        if (task) {
+            await getUserInformationHelper.getUserInformation(task);
+        }
 
         if (task) {
             return res.status(200).json({
@@ -85,6 +100,7 @@ module.exports.detail = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
     } catch (error) {
+        console.log(1);
         return res.status(500).json({ message: "Internal server error" });
     }
 }
@@ -176,7 +192,7 @@ module.exports.create = async (req, res) => {
 
         req.body.timeStart = new Date(req.body.timeStart);
         req.body.timeFinish = new Date(req.body.timeFinish);
-        req.body.createdBy = res.locals.currentUser._id;
+        req.body.createdBy = req.currentUser._id;
 
         const task = new Task(req.body);
         const create = await task.save();
