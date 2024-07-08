@@ -31,3 +31,10 @@ module.exports.login = (req, res, next) => {
     }
     return next();
 }
+
+module.exports.forgotPassword = (req, res, next) => {
+    if (!req.body.email) {
+        return res.status(400).json({ "message": "Please provide your email address." });
+    }
+    return next();
+}

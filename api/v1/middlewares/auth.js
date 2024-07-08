@@ -1,48 +1,51 @@
 const jwt = require('jsonwebtoken');
 const User = require("../models/user.model");
 
-const verifyToken = (token) => {
-    const key = process.env.jwt_signature;
-    let decoded = null;
-
+const verifyToken = (token, key) => {
     try {
-        decoded = jwt.verify(token, key);
+        return jwt.verify(token, key);
     } catch (err) {
-        console.log(err);
+        console.error('Error verifying token:', err);
+        return null;
     }
-    return decoded;
 }
 
-const checkUserJwt = async (req, res, next) => {
-    const cookies = req.cookies;
+module.exports.checkToken = (options = {}) => {
+    const { tokenName = 'token', type } = options;
 
-    if (cookies && cookies.token) {
-        const token = cookies.token;
-        const decoded = verifyToken(token);
-        if (decoded) {
-            const user = await Account.findOne({
+    return async (req, res, next) => {
+        if (!req.cookies || !req.cookies[tokenName]) {
+            return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+        }
+
+        const token = req.cookies[tokenName];
+        const key = process.env.JWT_SIGNATURE;
+        const decoded = verifyToken(token, key);
+
+        if (!decoded) {
+            res.clearCookie(tokenName);
+            return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+        }
+
+        try {
+            const user = await User.findOne({
                 _id: decoded.id,
-                deleted: false,
-                status: "active"
+                deleted: false
             }).select("-password");
 
-            if (user) {
-                const role = await Role.findById(user.roleId);
-                user.role = role;
-                res.locals.currentUser = user;
-                // console.log(res.locals.currentUser);
-                return next();
-            } else {
-                res.clearCookie("token");
-                return res.redirect(`${PATH_ADMIN}/auth/login`);
+            if (!user) {
+                res.clearCookie(tokenName);
+                return res.status(403).json({ message: 'You do not have permission to access this resource.' });
             }
-        } else {
-            res.clearCookie("token");
-            return res.redirect(`${PATH_ADMIN}/auth/login`);
-        }
-    } else {
-        return res.redirect(`${PATH_ADMIN}/auth/login`);
-    }
-}
 
-module.exports = checkUserJwt;
+            if (type) {
+                res.locals[type] = user;
+            }
+
+            return next();
+        } catch (error) {
+            console.error('Error finding user:', error);
+            return res.status(500).json({ message: 'Internal server error.' });
+        }
+    };
+};
