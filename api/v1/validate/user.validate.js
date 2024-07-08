@@ -21,3 +21,13 @@ module.exports.register = (req, res, next) => {
     }
     return next();
 }
+
+module.exports.login = (req, res, next) => {
+    if (!req.body.email) {
+        return res.status(400).json({ "message": "Please provide your email address." });
+    }
+    if (!req.body.password) {
+        return res.status(400).json({ "message": "Please provide a password." });
+    }
+    return next();
+}
