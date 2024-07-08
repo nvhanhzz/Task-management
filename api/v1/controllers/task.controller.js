@@ -115,7 +115,18 @@ module.exports.changeStatus = async (req, res) => {
             return res.status(400).json({ message: "Invalid status value" });
         }
 
-        const update = await Task.updateOne({ _id: id }, { status: status });
+        const update = await Task.updateOne(
+            {
+                _id: id,
+                $or: [
+                    { createdBy: req.currentUser._id },
+                    { participants: req.currentUser._id }
+                ]
+            },
+            {
+                status: status
+            }
+        );
 
         if (update.modifiedCount === 0) {
             return res.status(404).json({ message: "Task not found or status not modified" });
@@ -140,7 +151,11 @@ module.exports.changeMulti = async (req, res) => {
 
                 const update = await Task.updateMany(
                     {
-                        _id: { $in: ids }
+                        _id: { $in: ids },
+                        $or: [
+                            { createdBy: req.currentUser._id },
+                            { participants: req.currentUser._id }
+                        ]
                     },
                     {
                         status: value
@@ -161,7 +176,11 @@ module.exports.changeMulti = async (req, res) => {
                 const del = await Task.updateMany(
                     {
                         _id: { $in: ids },
-                        deleted: false
+                        deleted: false,
+                        $or: [
+                            { createdBy: req.currentUser._id },
+                            { participants: req.currentUser._id }
+                        ]
                     },
                     {
                         deleted: true,
@@ -222,7 +241,11 @@ module.exports.update = async (req, res) => {
         const update = await Task.updateOne(
             {
                 _id: id,
-                deleted: false
+                deleted: false,
+                $or: [
+                    { createdBy: req.currentUser._id },
+                    { participants: req.currentUser._id }
+                ]
             },
             req.body
         );
@@ -245,7 +268,11 @@ module.exports.delete = async (req, res) => {
         const update = await Task.updateOne(
             {
                 _id: id,
-                deleted: false
+                deleted: false,
+                $or: [
+                    { createdBy: req.currentUser._id },
+                    { participants: req.currentUser._id }
+                ]
             },
             {
                 deleted: true,
