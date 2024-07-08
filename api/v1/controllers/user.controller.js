@@ -186,3 +186,15 @@ module.exports.information = async (req, res) => {
         }
     });
 }
+
+// [GET] /api/v1/user/list
+module.exports.listUser = async (req, res) => {
+    const users = await User.find({
+        deleted: false
+    }).select("name email");
+
+    res.status(200).json({
+        message: "List user retrieved successfully",
+        users: users
+    })
+}

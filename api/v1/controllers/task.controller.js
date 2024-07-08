@@ -176,7 +176,7 @@ module.exports.create = async (req, res) => {
 
         req.body.timeStart = new Date(req.body.timeStart);
         req.body.timeFinish = new Date(req.body.timeFinish);
-        req.body.createBy = res.locals.currentUser._id;
+        req.body.createdBy = res.locals.currentUser._id;
 
         const task = new Task(req.body);
         const create = await task.save();
@@ -187,7 +187,6 @@ module.exports.create = async (req, res) => {
             return res.status(500).json({ message: "Failed to create task" });
         }
     } catch (error) {
-        console.log(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 }
