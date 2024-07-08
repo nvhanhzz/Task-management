@@ -6,6 +6,13 @@ const authMiddleware = require("../middlewares/auth");
 const validate = require("../validate/user.validate");
 const controller = require("../controllers/user.controller");
 
+router.use((req, res, next) => {
+    if (["/logout", "/information"].includes(req.path)) {
+        return next();
+    }
+    return authMiddleware.isLoggedOut(req, res, next);
+});
+
 router.post("/register", validate.register, controller.register);
 
 router.post("/login", validate.login, controller.login);
@@ -18,6 +25,6 @@ router.post("/password/verify-otp", validate.verifyOtp, authMiddleware.checkToke
 
 router.post("/password/reset", validate.resetPassword, authMiddleware.checkToken({ tokenName: 'reset-password-token', type: 'userResetPassword' }), controller.resetPassword);
 
-router.get("/information", authMiddleware.checkToken({ tokenName: 'token', type: 'currentUser' }), controller.information);
+router.get("/information", controller.information);
 
 module.exports = router;

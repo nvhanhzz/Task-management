@@ -15,7 +15,7 @@ module.exports.checkToken = (options = {}) => {
 
     return async (req, res, next) => {
         if (!req.cookies || !req.cookies[tokenName]) {
-            return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+            return next();
         }
 
         const token = req.cookies[tokenName];
@@ -24,7 +24,7 @@ module.exports.checkToken = (options = {}) => {
 
         if (!decoded) {
             res.clearCookie(tokenName);
-            return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+            return next();
         }
 
         try {
@@ -35,7 +35,7 @@ module.exports.checkToken = (options = {}) => {
 
             if (!user) {
                 res.clearCookie(tokenName);
-                return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+                return next();
             }
 
             if (type) {
@@ -49,3 +49,17 @@ module.exports.checkToken = (options = {}) => {
         }
     };
 };
+
+module.exports.isLoggedIn = (req, res, next) => {
+    if (!res.locals.currentUser) {
+        return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+    }
+    return next();
+}
+
+module.exports.isLoggedOut = (req, res, next) => {
+    if (res.locals.currentUser) {
+        return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+    }
+    return next();
+}
