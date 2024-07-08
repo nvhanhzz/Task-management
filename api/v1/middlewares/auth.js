@@ -11,7 +11,7 @@ const verifyToken = (token, key) => {
 }
 
 module.exports.checkToken = (options = {}) => {
-    const { tokenName = 'token', type } = options;
+    const { tokenName, type } = options;
 
     return async (req, res, next) => {
         if (!req.cookies || !req.cookies[tokenName]) {

@@ -38,3 +38,26 @@ module.exports.forgotPassword = (req, res, next) => {
     }
     return next();
 }
+
+module.exports.verifyOtp = (req, res, next) => {
+    if (!req.body.otp) {
+        return res.status(400).json({ "message": "Please provide OTP code." });
+    }
+    return next();
+}
+
+module.exports.resetPassword = (req, res, next) => {
+    if (!req.body.password) {
+        return res.status(400).json({ "message": "Please provide a password." });
+    }
+    if (!req.body.confirmPassword) {
+        return res.status(400).json({ "message": "Please confirm your password." });
+    }
+    if (req.body.password !== req.body.confirmPassword) {
+        return res.status(400).json({ "message": "Passwords do not match. Please try again." });
+    }
+    if (!regex.test(req.body.password)) {
+        return res.status(400).json({ "message": "Password must be at least 6 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character (@, $, !, %, *, ?, &, #)." });
+    }
+    return next();
+}

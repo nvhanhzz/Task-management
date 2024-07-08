@@ -48,6 +48,12 @@ module.exports.login = async (req, res) => {
     return res.status(200).json({ message: 'Login successful.' });
 }
 
+// [POST] /api/v1/user/logout
+module.exports.logout = async (req, res) => {
+    res.clearCookie("token");
+    return res.status(200).json({ message: 'Logout successful.' });
+}
+
 // [POST] /api/v1/user/password/forgot
 module.exports.forgotPassword = async (req, res) => {
     const email = req.body.email;
@@ -57,6 +63,15 @@ module.exports.forgotPassword = async (req, res) => {
     if (!existUser) {
         return res.status(404).json({ "message": 'Email not found or invalid credentials.' });
     }
+
+    // solve exist otp
+    const existOtp = await ForgotPassword.findOne({
+        email: email
+    });
+    if (existOtp) {
+        return res.status(400).json({ message: 'An OTP request already exists for this email.' });
+    }
+    // end solve exist otp
 
     // create OTP
     const otp = generateHelper.generateOTP(8);
@@ -87,6 +102,73 @@ module.exports.forgotPassword = async (req, res) => {
 }
 
 // [POST] /api/v1/user/password/verify-otp
-module.exports.forgotPassword = async (req, res) => {
-    // const verifyOtpToken = req.cookies
+module.exports.verifyOtp = async (req, res) => {
+    const userVerifyOtp = res.locals.userVerifyOtp;
+    if (!userVerifyOtp) {
+        return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+    }
+
+    const otp = req.body.otp;
+    const email = userVerifyOtp.email;
+    const forgotPassword = await ForgotPassword.findOne({
+        email: email
+    });
+
+    if (!forgotPassword) {
+        return res.status(404).json({ message: 'Forgot password request not found.' });
+    }
+
+    if (forgotPassword.attemptsLeft === 0) {
+        const del = await ForgotPassword.deleteOne({
+            email: email
+        });
+        if (!del) {
+            return res.status(500).json({ message: "Internal server error." });
+        }
+        res.clearCookie("verify_otp_token");
+
+        return res.status(403).json({ message: 'No attempts left. Please request a new OTP.' });
+    }
+
+    if (otp !== forgotPassword.otp) {
+        forgotPassword.attemptsLeft -= 1;
+        await forgotPassword.save();
+        return res.status(401).json({ message: 'Incorrect OTP. Please try again.' });
+    }
+
+    const del = await ForgotPassword.deleteOne({
+        email: email
+    });
+    if (!del) {
+        return res.status(500).json({ message: "Internal server error." });
+    }
+
+    res.clearCookie("verify_otp_token");
+    generateTokenHelper.generateToken(res, userVerifyOtp.id, TEMP_TOKEN_EXP, "reset-password-token");
+    return res.status(200).json({ message: "Verify OTP successful." });
+}
+
+// [POST] /api/v1/user/password/reset
+module.exports.resetPassword = async (req, res) => {
+    const userResetPassword = res.locals.userResetPassword;
+    if (!userResetPassword) {
+        return res.status(403).json({ message: 'You do not have permission to access this resource.' });
+    }
+
+    const password = await passwordHelper.hashPassword(req.body.password);
+    const reset = await User.updateOne(
+        {
+            _id: userResetPassword.id
+        },
+        {
+            password: password
+        }
+    );
+
+    if (!reset) {
+        return res.status(500).json({ message: "Internal server error." });
+    }
+
+    res.clearCookie("reset-password-token");
+    return res.status(200).json({ message: "Reset password successful." });
 }
