@@ -1,7 +1,6 @@
 const Task = require("../models/task.model");
 const paginationHelper = require("../../../helper/pagination");
 const searchHelper = require("../../../helper/search");
-const getUserInformationHelper = require("../../../helper/getUserInformation");
 
 const listStatus = ["initial", "doing", "finish", "pending", "notFinish"];
 
@@ -57,10 +56,13 @@ module.exports.index = async (req, res) => {
     const pagination = paginationHelper.pagination(query, limit, total);
     // end pagination
 
-    const tasks = await Task.find(filter).sort(sortObject).skip(pagination.skip).limit(pagination.limit);
-    if (tasks) {
-        await Promise.all(tasks.map(task => getUserInformationHelper.getUserInformation(task)));
-    }
+    const tasks = await Task.find(filter)
+        .sort(sortObject)
+        .skip(pagination.skip)
+        .limit(pagination.limit)
+        .populate("parentId", "title")
+        .populate("createdBy", "fullName email")
+        .populate("participants", "fullName email");
 
     return res.status(200).json({
         message: "Tasks retrieved successfully",
@@ -86,10 +88,10 @@ module.exports.detail = async (req, res) => {
                 { createdBy: req.currentUser._id },
                 { participants: req.currentUser._id }
             ]
-        });
-        if (task) {
-            await getUserInformationHelper.getUserInformation(task);
-        }
+        })
+            .populate("parentId", "title")
+            .populate("createdBy", "fullName email")
+            .populate("participants", "fullName email");
 
         if (task) {
             return res.status(200).json({
