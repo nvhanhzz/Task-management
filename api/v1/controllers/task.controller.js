@@ -72,7 +72,7 @@ module.exports.index = async (req, res) => {
             limit: pagination.limit,
             skip: pagination.skip,
             page: pagination.page,
-            totalPages: pagination.totalPages
+            totalPages: pagination.total
         }
     });
 }
@@ -120,6 +120,7 @@ module.exports.changeStatus = async (req, res) => {
         const update = await Task.updateOne(
             {
                 _id: id,
+                deleted: false,
                 $or: [
                     { createdBy: req.currentUser._id },
                     { participants: req.currentUser._id }
@@ -154,6 +155,7 @@ module.exports.changeMulti = async (req, res) => {
                 const update = await Task.updateMany(
                     {
                         _id: { $in: ids },
+                        deleted: false,
                         $or: [
                             { createdBy: req.currentUser._id },
                             { participants: req.currentUser._id }

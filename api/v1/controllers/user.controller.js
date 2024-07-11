@@ -191,7 +191,7 @@ module.exports.information = async (req, res) => {
 module.exports.listUser = async (req, res) => {
     const users = await User.find({
         deleted: false
-    }).select("name email");
+    }).select("fullName email");
 
     res.status(200).json({
         message: "List user retrieved successfully",

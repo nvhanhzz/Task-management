@@ -25,7 +25,7 @@ router.post("/password/verify-otp", validate.verifyOtp, authMiddleware.checkToke
 
 router.post("/password/reset", validate.resetPassword, authMiddleware.checkToken({ tokenName: 'reset-password-token', type: 'userResetPassword' }), controller.resetPassword);
 
-router.get("/information", controller.information);
+router.get("/information", authMiddleware.isLoggedIn, controller.information);
 
 router.get("/list", authMiddleware.isLoggedIn, controller.listUser);
 
